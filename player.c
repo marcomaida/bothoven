@@ -12,7 +12,10 @@
 #define M_PI  (3.14159265)
 #endif
 
-#define TABLE_SIZE   (4096)
+#define TABLE_SIZE   (8192)
+  
+const double overtones [] = { 1. };
+const int overtonesCount = 1;
 
 typedef struct pn
 {
@@ -82,11 +85,13 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
             if(x->time <= x->duration)
             {
                 static const double deltatime = 1. / (double)SAMPLE_RATE;
-                double deltaspace = (double)TABLE_SIZE * (double)x->frequency * deltatime;
-                double sample = data->sine[(long)(x->time * deltaspace) % TABLE_SIZE];
-                result += sample * getADSRMultiplier((float)x->time/(float)x->duration);
 
-                //double delta = (double)(FRAMES_PER_BUFFER * FRAMES_PER_BUFFER * x->frequency) / (double)SAMPLE_RATE;
+                for(int o = 0; o < overtonesCount; o++)
+                {
+                    double deltaspace = (double)TABLE_SIZE * (double)x->frequency * overtones[o] * deltatime;
+                    double sample = data->sine[(long)(x->time * deltaspace) % TABLE_SIZE];
+                    result += sample * getADSRMultiplier((float)x->time/(float)x->duration);
+                }
                 //printf("%f\n", result);
                 x->time ++;
             }
@@ -158,9 +163,9 @@ int main(void)
     {
         data.sine[i] = (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
     }
-    piece * p = get_musical_scale(6);
+   // piece * p = get_musical_scale(24);
    // piece * p = get_random_piece(7.f, 1, 1, 2, .2f);
-   // piece * p = get_random_piece(2.3f, 3, 1, 2, .2f);
+    piece * p = get_random_piece(10.f, 5, 1, 3, .2f);
     print_piano_roll(p);
     data.buffer = NEW(player_buffer);
     data.buffer->notes = ll_new();

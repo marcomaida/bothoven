@@ -11,7 +11,6 @@
 #define TOTAL_TONES (OCTAVES * 12)
 #define START_OCTAVE 3
 
-
 #define TONE(note) ((note) & 63)
 #define DURATION(note) ((note) & 3<<6)
 #define NAME(note) "CcDdEFfGgAaB"[TONE(note)%12]
