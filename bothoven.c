@@ -6,9 +6,10 @@ int main()
 {
 	srand((unsigned int)time(0));
 	piece * p = get_random_piece(5, 8, 3, 8, .2f);
-	if(fork())
+	if(!fork())
 	{
-     	system("aplay note.wav");
+		play_piece(p);
+     	//system("aplay note.wav");
      	exit(0);
 	}
 
