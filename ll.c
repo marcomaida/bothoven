@@ -46,6 +46,17 @@ void ll_remove(list * l, void * value)
 	}
 }
 
+int ll_count(list * l)
+{
+	int c = 0;
+	FOREACH_X(l, void)
+	{
+		c++;
+	}
+
+	return c;
+}
+
 void ll_free(list * l)
 {
 	node * previous = NULL;

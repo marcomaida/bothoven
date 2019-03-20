@@ -1,5 +1,5 @@
+#include "player.h"
 #include <stdio.h>
-#include <math.h>
 #include "portaudio.h"
 #include "piece.h"
 #include "utils.h"
@@ -26,21 +26,15 @@ typedef struct pn
 
 typedef struct 
 {
+    float sine[TABLE_SIZE];
     list * notes;
     unsigned long frames_per_unit;
 } player_buffer;
 
-typedef struct
-{
-    float sine[TABLE_SIZE];
-    player_buffer * buffer;
-}
-paTestData;
-
 double getADSRMultiplier(float time01)
 {
-    #define ATTACK .1f
-    #define DECAY .3f
+    #define ATTACK .05f
+    #define DECAY .1f
     #define SUSTAIN .6f
     #define RELEASE 1.f
 
@@ -68,7 +62,7 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
                             PaStreamCallbackFlags statusFlags,
                             void *userData )
 {
-    paTestData *data = (paTestData*)userData;
+    player_buffer *buffer = (player_buffer*)userData;
     float *out = (float*)outputBuffer;
     unsigned long i;
 
@@ -80,7 +74,7 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
     {
         double result = 0;
 
-        FOREACH_X(data->buffer->notes, player_note)
+        FOREACH_X(buffer->notes, player_note)
         {
             if(x->time <= x->duration)
             {
@@ -89,7 +83,7 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
                 for(int o = 0; o < overtonesCount; o++)
                 {
                     double deltaspace = (double)TABLE_SIZE * (double)x->frequency * overtones[o] * deltatime;
-                    double sample = data->sine[(long)(x->time * deltaspace) % TABLE_SIZE];
+                    double sample = buffer->sine[(long)(x->time * deltaspace) % TABLE_SIZE];
                     result += sample * getADSRMultiplier((float)x->time/(float)x->duration);
                 }
                 //printf("%f\n", result);
@@ -101,14 +95,6 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
         *out++ = result; //right      
     }
 
-    // for( i=0; i<framesPerBuffer; i++ )
-    // {
-    //     *out++ = data->sine[data->sampleIndex];  /* left */
-    //     *out++ = data->sine[data->sampleIndex];  /* right */
-    //     data->sampleIndex += 5;
-    //     if( data->sampleIndex >= TABLE_SIZE ) data->sampleIndex -= TABLE_SIZE;
-    // }
-
     return paContinue;
 }
 
@@ -117,59 +103,53 @@ static int paSampleCallback( const void *inputBuffer, void *outputBuffer,
  */
 static void StreamFinished( void* userData )
 {
-   paTestData *data = (paTestData *) userData;
+   player_buffer *buffer = (player_buffer *) userData;
    printf( "Piece Completed:\n");
+
+   ll_free(buffer->notes);
+   FREE(buffer);
 }
 
 /*
 * Adds the given notes to the buffer
 */
-void fillBuffer(player_buffer * pb, note * notes, int num)
+void fillBuffer(player_buffer * buffer, note * notes, int num)
 {
     for(int i = 0; i < num; i++)
     {
         note n = notes[i];
         printf("Playing %d-%c%d-%2fHz\n", (int)TONE(n), NAME(n), NOTE_OCTAVE(n), get_note_frequency(n));
-
+        //printf("count: %d\n", ll_count(buffer->notes));
         player_note * newNote = NEW(player_note);
         newNote->frequency = get_note_frequency(n);
         newNote->time = 0;
-        newNote->duration = pb->frames_per_unit * (1 << DURATION(n)); //TODO PICK DURATION
-        ll_cons(pb->notes, newNote);
+        newNote->duration = buffer->frames_per_unit * (1 << DURATION(n)); //TODO PICK DURATION
+        ll_cons(buffer->notes, newNote);
     }
 }
 
 /*
-* Removes finished notes and add new notes
+* Removes finished notes and adds new notes
 */
-void updateBuffer(player_buffer * pb, piece * p, unsigned long time)
+void updateBuffer(player_buffer * buffer, piece * p, unsigned long time)
 {
-    REMOVE_ALL_X(pb->notes, player_note, (x->time >= x->duration))
+    REMOVE_ALL_X(buffer->notes, player_note, (x->time >= x->duration))
 
     note * notes = p->units[time].accompaniement;
-    fillBuffer(pb, notes, p->units[time].accompaniementCount);
+    fillBuffer(buffer, notes, p->units[time].accompaniementCount);
 
     notes = p->units[time].melody;
-    fillBuffer(pb, notes, p->units[time].melodyCount);
+    fillBuffer(buffer, notes, p->units[time].melodyCount);
 }
 
 /*******************************************************************/
-int main(void);
-int main(void)
+int play(piece * p)
 {
-    srand(12);
-    paTestData data;
+    player_buffer * buffer = NEW(player_buffer);
+    buffer->notes = ll_new();
+    buffer->frames_per_unit = SAMPLE_RATE / p->unitsPerSecond;
     for(int i=0; i<TABLE_SIZE; i++ )
-    {
-        data.sine[i] = (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
-    }
-   // piece * p = get_musical_scale(24);
-   // piece * p = get_random_piece(7.f, 1, 1, 2, .2f);
-    piece * p = get_random_piece(10.f, 5, 1, 3, .2f);
-    print_piano_roll(p);
-    data.buffer = NEW(player_buffer);
-    data.buffer->notes = ll_new();
-    data.buffer->frames_per_unit = SAMPLE_RATE / p->unitsPerSecond;
+        buffer->sine[i] = (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
 
 #pragma region portaudio init
     PaStreamParameters outputParameters;
@@ -196,7 +176,7 @@ int main(void)
               FRAMES_PER_BUFFER,
               paClipOff,      /* we won't output out of range samples so don't bother clipping them */
               paSampleCallback,
-              &data );
+              buffer );
     if( err != paNoError ) goto error;
     err = Pa_SetStreamFinishedCallback( stream, &StreamFinished );
     if( err != paNoError ) goto error;
@@ -208,7 +188,7 @@ int main(void)
     for(int i = 0; i < p->unitsCount; i++)
     {
         Pa_Sleep( 1.f / (float)p->unitsPerSecond * 1000.f );
-        updateBuffer(data.buffer, p, i);
+        updateBuffer(buffer, p, i);
     }
     Pa_Sleep( 1.f / (float)p->unitsPerSecond * 1000.f );
 

@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct list_node
 {
 	void * value;
@@ -12,6 +14,7 @@ typedef struct
 list * ll_new();
 void ll_cons(list * l, void * value);
 void ll_remove(list * l, void * value);
+int ll_count(list * l);
 void ll_free(list * l);
 
 /*
@@ -25,7 +28,7 @@ void ll_free(list * l);
 			node_rm = node_rm->next;					\
 			type* x = prev_node_rm->value;         		\
 			if(expr)                  					\
-				ll_remove(llist, prev_node_rm);			\
+				ll_remove(llist, prev_node_rm->value);  \
 	}}
 
 #define FOREACH_X(llist, type)\

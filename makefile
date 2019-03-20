@@ -1,2 +1,2 @@
-buildandrun: bothoven.c piece.h utils.h
-	gcc player.c ll.c libportaudio.a -lrt -lm -lasound -pthread && ./a.out
+buildandrun: bothoven.c piece.h utils.h player.h player.c 
+	gcc bothoven.c ll.c player.c piece.c libportaudio.a -lrt -lm -lasound -pthread && ./a.out
