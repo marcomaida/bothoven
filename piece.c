@@ -91,21 +91,12 @@ void piece_free(piece * p)
 		unit_free(u);
 		u++;
 	}
+
+	FREE(piece, p);
 }
 
 void unit_free(unit * u)
 {
-	note * n = u->melody;
-	for(unsigned int ii = 0; ii < u->melodyCount; ii++)
-	{
-		FREE(n);
-		n++;
-	}
-
-	n = u->accompaniement;
-	for(unsigned int ii = 0; ii < u->accompaniementCount; ii++)
-	{
-		FREE(n);
-		n++;
-	}
+	FREE_ARRAY(unit, u->melody, u->melodyCount);
+	FREE_ARRAY(unit, u->accompaniement, u->accompaniementCount);
 }

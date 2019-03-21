@@ -28,13 +28,13 @@ void ll_remove(list * l, void * value)
 			if(previous == NULL)
 			{//removing head
 				l->head = n->next;
-				FREE(n);
+				FREE(node, n);
 				n = l->head;
 			}
 			else
 			{//removing inside the list
 				previous->next = n->next;
-				FREE(n);
+				FREE(node, n);
 				n = previous->next;
 			}
 		}
@@ -66,8 +66,8 @@ void ll_free(list * l)
 	{
 		previous = n;
 		n = n->next;
-		FREE(previous);
+		FREE(node, previous);
 	}
 
-	FREE(l);    
+	FREE(list, l);    
 }

@@ -13,10 +13,12 @@ typedef struct
 
 int main()
 {
-	INIT_MEMORY_CHECK
+	START_MEMORY_CHECK
+	START_MEMORY_LOG
 	srand((unsigned int)time(0));
-	make_genetic_island(100, 10);
-	CHECK_MEMORY
+	make_genetic_island(1, 1);
+	STOP_MEMORY_CHECK
+	STOP_MEMORY_LOG
     //piece * p = get_random_piece(10.f, 5, 1, 3, .2f);
     //piece * p = get_musical_scale(2);
 	/*
@@ -37,13 +39,10 @@ void make_genetic_island(int population, int duration)
 	piece * p = island->individuals;
 	for(int i = 0; i < population; i++)
 	{
-		make_random_piece(p, duration,5, 1, 3, .5f);
+		make_random_piece(p, duration, 1, 1, 2, .5f);
 		//print_piano_roll(p);
 		p++;
 	}
-
-
-
 
 	p = island->individuals;
 	for(int i = 0; i < population; i++)

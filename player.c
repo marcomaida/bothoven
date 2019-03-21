@@ -107,7 +107,7 @@ static void StreamFinished( void* userData )
    printf( "Piece Completed:\n");
 
    ll_free(buffer->notes);
-   FREE(buffer);
+   FREE(player_buffer, buffer);
 }
 
 /*
