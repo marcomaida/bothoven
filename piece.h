@@ -18,6 +18,13 @@
 #define NAME(note) "CcDdEFfGgAaB"[TONE(note)%12]
 #define NOTE_OCTAVE(note) (TONE(note)/12+START_OCTAVE)
 
+#define WHOLE_NOTE 3 << 6 
+#define HALF_NOTE 2 << 6
+#define QUARTER_NOTE 1 << 6
+#define EIGHT_NOTE 0
+
+#define SAME_DURATION(note1, note2) (TONE(note1) == TONE(note2))
+
 /**
 * A note uses the first 2 bits to store note duration
 * and the other 6 bits to store the tone.
@@ -50,6 +57,8 @@ typedef struct musical_piece
 
 note get_random_note();
 float get_note_frequency(note note);
-piece * get_random_piece(unsigned int duration, unsigned int unitsPerSecond, unsigned int minNotesPerUnit, unsigned int maxNotesPerUnit, float melodyToAccNotesRatio01);
+void make_random_piece(piece * p, unsigned int duration, unsigned int unitsPerSecond, unsigned int minNotesPerUnit, unsigned int maxNotesPerUnit, float melodyToAccNotesRatio01);
 piece * get_musical_scale(unsigned int unitsPerSecond);
 void print_piano_roll(piece * p);
+void piece_free(piece * p);
+void unit_free(unit * u);

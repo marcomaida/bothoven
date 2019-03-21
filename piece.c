@@ -11,9 +11,8 @@ float get_note_frequency(note note)
 	return 440.f * pow(2,(TONE(note) +(START_OCTAVE-1)*12-49+4)/ 12.f);
 }
 
-piece * get_random_piece(unsigned int duration, unsigned int unitsPerSecond, unsigned int minNotesPerUnit, unsigned int maxNotesPerUnit, float melodyToAccNotesRatio01)
+void make_random_piece(piece * p, unsigned int duration, unsigned int unitsPerSecond, unsigned int minNotesPerUnit, unsigned int maxNotesPerUnit, float melodyToAccNotesRatio01)
 {
-	piece * p = NEW(piece);
 	p->unitsCount = duration * unitsPerSecond;
 	p->unitsPerSecond = unitsPerSecond;
 	p->units = NEW_ARRAY(unit,p->unitsCount);
@@ -37,8 +36,6 @@ piece * get_random_piece(unsigned int duration, unsigned int unitsPerSecond, uns
 			u->accompaniement[ii] = get_random_note();
 		}
 	}
-
-	return p;
 }
 
 piece * get_musical_scale(unsigned int unitsPerSecond)
@@ -83,5 +80,32 @@ void print_piano_roll(piece * p)
 		}
 
 		printf("|%s|\n", notes);
+	}
+}
+
+void piece_free(piece * p)
+{
+	unit * u = p->units;
+	for(unsigned int i = 0; i < p->unitsCount; i++)
+	{
+		unit_free(u);
+		u++;
+	}
+}
+
+void unit_free(unit * u)
+{
+	note * n = u->melody;
+	for(unsigned int ii = 0; ii < u->melodyCount; ii++)
+	{
+		FREE(n);
+		n++;
+	}
+
+	n = u->accompaniement;
+	for(unsigned int ii = 0; ii < u->accompaniementCount; ii++)
+	{
+		FREE(n);
+		n++;
 	}
 }
